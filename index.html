@@ -266,7 +266,14 @@
         <button id="clearAll" class="clear-all" disabled>전체 삭제</button>
     </div>
 
-    <script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // Supabase 클라이언트 초기화
+        const supabaseUrl = 'https://louuzdoyoyfczjkukenl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvdXV6ZG95b3lmY3pqa3VrZW5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDk4NjgsImV4cCI6MjA4NTY4NTg2OH0.tnb1Iqa8M1gCIOptxHeT0JVR2hb0GezKhxwXfTJdvfY';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
         // DOM 요소 가져오기
         const itemInput = document.getElementById('itemInput');
         const addButton = document.getElementById('addButton');
@@ -276,14 +283,29 @@
         const remainingCount = document.getElementById('remainingCount');
         const clearAllButton = document.getElementById('clearAll');
 
-        // 로컬 스토리지에서 데이터 불러오기
-        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+        let items = [];
+
+        // 데이터 불러오기
+        async function loadItems() {
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('데이터 로드 오류:', error);
+                return;
+            }
+
+            items = data || [];
+            renderList();
+        }
 
         // 초기 렌더링
-        renderList();
+        loadItems();
 
         // 아이템 추가
-        function addItem() {
+        async function addItem() {
             const itemText = itemInput.value.trim();
 
             if (itemText === '') {
@@ -291,49 +313,75 @@
                 return;
             }
 
-            const newItem = {
-                id: Date.now(),
-                text: itemText,
-                checked: false
-            };
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .insert([{ text: itemText, checked: false }])
+                .select();
 
-            items.push(newItem);
-            saveToLocalStorage();
-            renderList();
+            if (error) {
+                console.error('아이템 추가 오류:', error);
+                alert('아이템 추가에 실패했습니다.');
+                return;
+            }
 
+            await loadItems();
             itemInput.value = '';
             itemInput.focus();
         }
 
         // 아이템 삭제
-        function deleteItem(id) {
-            items = items.filter(item => item.id !== id);
-            saveToLocalStorage();
-            renderList();
+        async function deleteItem(id) {
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('아이템 삭제 오류:', error);
+                alert('아이템 삭제에 실패했습니다.');
+                return;
+            }
+
+            await loadItems();
         }
 
         // 아이템 체크/언체크
-        function toggleCheck(id) {
+        async function toggleCheck(id) {
             const item = items.find(item => item.id === id);
-            if (item) {
-                item.checked = !item.checked;
-                saveToLocalStorage();
-                renderList();
+            if (!item) return;
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .update({ checked: !item.checked })
+                .eq('id', id);
+
+            if (error) {
+                console.error('체크 상태 변경 오류:', error);
+                alert('체크 상태 변경에 실패했습니다.');
+                return;
             }
+
+            await loadItems();
         }
 
         // 전체 삭제
-        function clearAll() {
-            if (confirm('정말로 모든 항목을 삭제하시겠습니까?')) {
-                items = [];
-                saveToLocalStorage();
-                renderList();
+        async function clearAll() {
+            if (!confirm('정말로 모든 항목을 삭제하시겠습니까?')) {
+                return;
             }
-        }
 
-        // 로컬 스토리지에 저장
-        function saveToLocalStorage() {
-            localStorage.setItem('shoppingList', JSON.stringify(items));
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .neq('id', 0); // 모든 항목 삭제
+
+            if (error) {
+                console.error('전체 삭제 오류:', error);
+                alert('전체 삭제에 실패했습니다.');
+                return;
+            }
+
+            await loadItems();
         }
 
         // 통계 업데이트
