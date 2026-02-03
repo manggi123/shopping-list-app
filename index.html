@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쇼핑 리스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #itemInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #itemInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #addButton {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        #addButton:hover {
+            background: #5568d3;
+        }
+
+        #addButton:active {
+            transform: scale(0.98);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        #shoppingList {
+            list-style: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #shoppingList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #shoppingList::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        #shoppingList::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .list-item:hover {
+            background: #f0f0f0;
+            transform: translateX(5px);
+        }
+
+        .list-item.checked {
+            opacity: 0.6;
+        }
+
+        .list-item.checked .item-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .item-text {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .delete-button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        .delete-button:hover {
+            background: #ee5a6f;
+        }
+
+        .delete-button:active {
+            transform: scale(0.95);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .clear-all {
+            width: 100%;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .clear-all:hover {
+            background: #ee5a6f;
+        }
+
+        .clear-all:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🛒 쇼핑 리스트
+        </h1>
+
+        <div class="input-container">
+            <input
+                type="text"
+                id="itemInput"
+                placeholder="구매할 물건을 입력하세요..."
+                autocomplete="off"
+            >
+            <button id="addButton">추가</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div>전체</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="checkedCount">0</div>
+                <div>완료</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="remainingCount">0</div>
+                <div>남은 항목</div>
+            </div>
+        </div>
+
+        <ul id="shoppingList"></ul>
+
+        <button id="clearAll" class="clear-all" disabled>전체 삭제</button>
+    </div>
+
+    <script>
+        // DOM 요소 가져오기
+        const itemInput = document.getElementById('itemInput');
+        const addButton = document.getElementById('addButton');
+        const shoppingList = document.getElementById('shoppingList');
+        const totalCount = document.getElementById('totalCount');
+        const checkedCount = document.getElementById('checkedCount');
+        const remainingCount = document.getElementById('remainingCount');
+        const clearAllButton = document.getElementById('clearAll');
+
+        // 로컬 스토리지에서 데이터 불러오기
+        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+
+        // 초기 렌더링
+        renderList();
+
+        // 아이템 추가
+        function addItem() {
+            const itemText = itemInput.value.trim();
+
+            if (itemText === '') {
+                itemInput.focus();
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                text: itemText,
+                checked: false
+            };
+
+            items.push(newItem);
+            saveToLocalStorage();
+            renderList();
+
+            itemInput.value = '';
+            itemInput.focus();
+        }
+
+        // 아이템 삭제
+        function deleteItem(id) {
+            items = items.filter(item => item.id !== id);
+            saveToLocalStorage();
+            renderList();
+        }
+
+        // 아이템 체크/언체크
+        function toggleCheck(id) {
+            const item = items.find(item => item.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                saveToLocalStorage();
+                renderList();
+            }
+        }
+
+        // 전체 삭제
+        function clearAll() {
+            if (confirm('정말로 모든 항목을 삭제하시겠습니까?')) {
+                items = [];
+                saveToLocalStorage();
+                renderList();
+            }
+        }
+
+        // 로컬 스토리지에 저장
+        function saveToLocalStorage() {
+            localStorage.setItem('shoppingList', JSON.stringify(items));
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const total = items.length;
+            const checked = items.filter(item => item.checked).length;
+            const remaining = total - checked;
+
+            totalCount.textContent = total;
+            checkedCount.textContent = checked;
+            remainingCount.textContent = remaining;
+
+            clearAllButton.disabled = total === 0;
+        }
+
+        // 리스트 렌더링
+        function renderList() {
+            shoppingList.innerHTML = '';
+
+            if (items.length === 0) {
+                shoppingList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛍️</div>
+                        <div>쇼핑 리스트가 비어있습니다</div>
+                        <div style="font-size: 14px; margin-top: 10px;">물건을 추가해보세요!</div>
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = `list-item ${item.checked ? 'checked' : ''}`;
+
+                li.innerHTML = `
+                    <input
+                        type="checkbox"
+                        class="checkbox"
+                        ${item.checked ? 'checked' : ''}
+                        onchange="toggleCheck(${item.id})"
+                    >
+                    <span class="item-text">${escapeHtml(item.text)}</span>
+                    <button class="delete-button" onclick="deleteItem(${item.id})">삭제</button>
+                `;
+
+                shoppingList.appendChild(li);
+            });
+
+            updateStats();
+        }
+
+        // HTML 이스케이프 (XSS 방지)
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 이벤트 리스너
+        addButton.addEventListener('click', addItem);
+        clearAllButton.addEventListener('click', clearAll);
+
+        itemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addItem();
+            }
+        });
+
+        // 전역 함수로 만들기 (HTML onclick에서 사용)
+        window.deleteItem = deleteItem;
+        window.toggleCheck = toggleCheck;
+    </script>
+</body>
+</html>

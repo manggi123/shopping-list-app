@@ -10,7 +10,7 @@ async function testShoppingList() {
 
     try {
         // HTML 파일 경로
-        const filePath = path.join(__dirname, 'shopping-list.html');
+        const filePath = path.join(__dirname, 'index.html');
         const fileUrl = `file://${filePath}`;
 
         console.log('✓ 브라우저 실행');
